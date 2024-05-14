@@ -31,22 +31,34 @@ func IngestLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Save Metadata first
+	if err := pgDB.Create(&logEntry.Metadata).Error; err != nil {
+		log.Printf("Error saving metadata to PostgreSQL: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Save LogEntry with reference to Metadata
+	logEntry.MetadataID = logEntry.Metadata.ID
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	go func(ctx context.Context, logEntry models.LogEntry) {
-		if err := pgDB.WithContext(ctx).Create(&logEntry).Error; err != nil {
-			log.Printf("Error saving to PostgreSQL: %v", err)
-		}
+	if err := pgDB.WithContext(ctx).Create(&logEntry).Error; err != nil {
+		log.Printf("Error saving to PostgreSQL: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-		_, err := esClient.Index().
-			Index("logs").
-			BodyJson(logEntry).
-			Do(ctx)
-		if err != nil {
-			log.Printf("Error saving to Elasticsearch: %v", err)
-		}
-	}(ctx, logEntry)
+	// Save to Elasticsearch
+	_, err := esClient.Index().
+		Index("logs").
+		BodyJson(logEntry).
+		Do(ctx)
+	if err != nil {
+		log.Printf("Error saving to Elasticsearch: %v", err)
+		http.Error(w, "Failed to save log entry", http.StatusInternalServerError)
+		return
+	}
 
 	response := map[string]string{"message": "Log entry ingested successfully"}
 	w.Header().Set("Content-Type", "application/json")

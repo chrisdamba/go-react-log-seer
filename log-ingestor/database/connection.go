@@ -29,6 +29,6 @@ func InitPostgres() *gorm.DB {
 	if err != nil {
 		log.Fatalf("Error connecting to Postgres: %v", err)
 	}
-	db.AutoMigrate(&models.LogEntry{})
+	db.AutoMigrate(&models.LogEntry{}, &models.Metadata{})
 	return db
 }

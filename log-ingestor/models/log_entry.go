@@ -8,9 +8,6 @@ type LogEntry struct {
 	TraceId     string                 `json:"traceId"`
 	SpanId      string                 `json:"spanId"`
 	Commit      string                 `json:"commit"`
-	Metadata    Metadata 							 `json:"metadata"`
-}
-
-type Metadata struct {
-	ParentResourceId string `json:"parentResourceId"`
+	MetadataID  uint      						 `json:"metadata_id"`
+	Metadata    Metadata  						 `json:"metadata" gorm:"foreignKey:MetadataID"`
 }
