@@ -1,4 +1,12 @@
-import {Form, Links, Meta, Scripts, ScrollRestoration} from '@remix-run/react'
+import * as React from 'react'
+import {
+  Form,
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from '@remix-run/react'
 import type {LinksFunction} from '@remix-run/node'
 
 import appStylesHref from './app.css?url'
@@ -8,6 +16,24 @@ export const links: LinksFunction = () => [
 ]
 
 export default function App() {
+  const [filters, setFilters] = React.useState({
+    fullTextSearch: '',
+    level: '',
+    message: '',
+    resourceId: '',
+    timestampStart: '',
+    timestampEnd: '',
+    traceId: '',
+    spanId: '',
+    commit: '',
+    parentResourceId: '',
+  })
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const {name, value} = e.target
+    setFilters({...filters, [name]: value})
+  }
+
   return (
     <html lang='en'>
       <head>
@@ -18,34 +44,44 @@ export default function App() {
       </head>
       <body>
         <div id='sidebar'>
-          <h1>Remix Contacts</h1>
           <div>
-            <Form id='search-form' role='search'>
+            <Form id='search-form' role='search' method='get'>
               <input
                 id='q'
                 aria-label='Search contacts'
                 placeholder='Search'
                 type='search'
-                name='q'
+                name='fullTextSearch'
               />
               <div id='search-spinner' aria-hidden hidden={true} />
-            </Form>
-            <Form method='post'>
-              <button type='submit'>New</button>
+              <div className='mb-4' />
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+                {[
+                  'level',
+                  'message',
+                  'resourceId',
+                  'timestampStart',
+                  'timestampEnd',
+                  'traceId',
+                  'spanId',
+                  'commit',
+                  'parentResourceId',
+                ].map((key) => (
+                  <input
+                    key={key}
+                    name={key}
+                    placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                    value={filters[key]}
+                    onChange={handleInputChange}
+                    className='p-2 border rounded'
+                  />
+                ))}
+              </div>
+              <button type='submit'>Search</button>
             </Form>
           </div>
-          <nav>
-            <ul>
-              <li>
-                <a href={`/contacts/1`}>Your Name</a>
-              </li>
-              <li>
-                <a href={`/contacts/2`}>Your Friend</a>
-              </li>
-            </ul>
-          </nav>
         </div>
-
+        <Outlet />
         <ScrollRestoration />
         <Scripts />
       </body>
